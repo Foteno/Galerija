@@ -1,34 +1,59 @@
 package lt.insoft;
 
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Objects;
 
 @RestController
 public class ImageController {
+
     @GetMapping("/")
-    public @ResponseBody String index() {
+    public @ResponseBody
+    String index() {
         return "It finally works?";
     }
-    @GetMapping(value = "/image", produces = MediaType.IMAGE_JPEG_VALUE)
-    public @ResponseBody byte[] getImage() throws IOException {
-        InputStream in = getClass().getResourceAsStream("Untitled.jpg");
-        if (in == null)
-            return new byte[] {1,3,127};
+
+    @GetMapping(value = "/image/{filename:.+}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public byte[] getImage(@PathVariable String filename) throws IOException {
+        InputStream in;
+        try {
+            in = new FileInputStream("C:\\Users\\patrikas.styra\\Desktop\\Images\\" + filename);
+        } catch (FileNotFoundException e) {
+            //String string = "File not found";
+            return null;
+        }
         return in.readAllBytes();
     }
+
+    @RequestMapping(value = "/images", method = RequestMethod.GET)
+    @ResponseBody
+    public String getMultipleImages() {
+        ArrayList<File> files = new ArrayList<>();
+        File folder = new File("C:\\Users\\patrikas.styra\\Desktop\\Images");
+        Collections.addAll(files, Objects.requireNonNull(folder.listFiles()));
+        for (File file : files) {
+            System.out.println(file.getName());
+            System.out.println(file.getAbsolutePath());
+        }
+        return "a;";
+    }
+
     @RequestMapping(value = "/postImage", method = RequestMethod.POST)
     public String postImage(@RequestParam("file") MultipartFile file, ModelMap modelMap) throws IOException {
         modelMap.addAttribute("file", file);
-        File newFile = new File("C:\\Users\\patrikas.styra\\Desktop\\b.jpg");
+        //pakeisti filepath
+        File newFile = new File("C:\\Users\\patrikas.styra\\Desktop\\Images\\" + file.getOriginalFilename());
         file.transferTo(newFile);
-        return "abcdefghijkl";
 
+        return file.getOriginalFilename() + " received.";
     }
+
+
 }
