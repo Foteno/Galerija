@@ -1,8 +1,8 @@
-package lt.insoft;
+package lt.insoft.gallery.domain.image;
 
+import lt.insoft.Image;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -15,9 +15,7 @@ public class ImageService {
     }
 
     public List<Image> getAllImages() {
-        List<Image> images = new ArrayList<>();
-        imageRepository.findAll().forEach(images::add);
-        return images;
+        return imageRepository.findAll();
     }
 
     public void saveImage(Image image) {

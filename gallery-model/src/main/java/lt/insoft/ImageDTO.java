@@ -7,9 +7,29 @@ public class ImageDTO {
     private String name;
     private String date;
     private String description;
+    private String UUID_Name;
+
+    public ImageDTO(MultipartFile image, String name, String date, String description, String UUID_Name) {
+        this.image = image;
+        this.name = name;
+        this.date = date;
+        this.description = description;
+        this.UUID_Name = UUID_Name;
+    }
+
+    public ImageDTO() {
+    }
 
     public MultipartFile getImage() {
         return image;
+    }
+
+    public String getUUID_Name() {
+        return UUID_Name;
+    }
+
+    public void setUUID_Name(String UUID_Name) {
+        this.UUID_Name = UUID_Name;
     }
 
     public void setImage(MultipartFile image) {

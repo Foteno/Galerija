@@ -1,4 +1,4 @@
-package lt.insoft;
+package lt.insoft.gallery.domain.user;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
