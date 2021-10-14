@@ -1,7 +1,6 @@
 package lt.insoft;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -10,6 +9,7 @@ import javax.persistence.*;
 @Setter
 @Entity
 @Table
+@NoArgsConstructor
 public class Image {
 
     public Image(String name, String date, String description, String uuidName) {
@@ -31,7 +31,4 @@ public class Image {
     private String description;
     @Column
     private String uuidName;
-    public Image() {
-
-    }
 }

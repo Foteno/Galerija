@@ -9,7 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 
-@SpringBootApplication
+@Configuration
+@EnableAutoConfiguration
 @EnableJpaRepositories("lt.insoft.gallery")
 @EntityScan("lt.insoft")
 @ComponentScan({"lt.insoft.gallery"})
