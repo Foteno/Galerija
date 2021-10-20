@@ -67,10 +67,6 @@ public class ImageController {
         MultipartFile image = file.getImage();
         UUID uuid = UUID.randomUUID();
         File newImageFile = new File(IMAGE_PATH + uuid);
-        if (!newImageFile.exists()) {
-            System.out.println("newImageFile not found postImage");
-            throw new FileNotFoundException();
-        }
         BufferedImage newImageThumbnailBuffered = null;
         image.transferTo(newImageFile);
         try {
@@ -80,6 +76,7 @@ public class ImageController {
             e.printStackTrace();
         }
         File newImageThumbnailFile = new File(IMAGE_PATH + uuid + THUMBNAIL_SUFFIX);
+        assert newImageThumbnailBuffered != null;
         ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile);
         Image imageDetailsToDb = new Image(file.getName(), file.getDate(), file.getDescription(), uuid.toString());
         try {

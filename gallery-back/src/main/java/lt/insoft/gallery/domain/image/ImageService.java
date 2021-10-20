@@ -24,14 +24,6 @@ public class ImageService {
         return imageRepository.findAll(PageRequest.of(page, size));
     }
 
-    public List<Image> getAllImages() {
-        return imageRepository.findAll();
-    }
-
-    public Image getImageByUuid(String uuid) {
-        return imageRepository.findByUuidName(uuid);
-    }
-
     public void saveImage(Image image) {
         imageRepository.save(image);
     }
