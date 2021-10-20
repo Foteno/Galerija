@@ -11,14 +11,6 @@ import javax.persistence.*;
 @Table
 @NoArgsConstructor
 public class Image {
-
-    public Image(String name, String date, String description, String uuidName) {
-        this.name = name;
-        this.date = date;
-        this.description = description;
-        this.uuidName = uuidName;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -31,4 +23,11 @@ public class Image {
     private String description;
     @Column
     private String uuidName;
+
+    public Image(String name, String date, String description, String uuid) {
+        this.name = name;
+        this.date = date;
+        this.description = description;
+        this.uuidName = uuid;
+    }
 }

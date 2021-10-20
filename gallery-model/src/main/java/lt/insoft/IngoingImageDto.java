@@ -11,10 +11,10 @@ import org.springframework.web.multipart.MultipartFile;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class IngoingImageDTO {
+public class IngoingImageDto {
     private MultipartFile image;
     private String name;
     private String date;
     private String description;
-    private String UUID_Name;
+    private String uuid;
 }

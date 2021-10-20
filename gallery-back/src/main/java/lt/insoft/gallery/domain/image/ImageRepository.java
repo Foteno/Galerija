@@ -11,5 +11,6 @@ import java.util.List;
 public interface ImageRepository extends JpaRepository<Image, Integer> {
     List<Image> findByName(String name);
     List<Image> findAllById(int Id, Pageable pageable);
+    Image findByUuidName(String uuidName);
     Image findById(int id);
 }
