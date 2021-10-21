@@ -2,20 +2,37 @@ package lt.insoft.gallery.domain.image;
 
 import lombok.RequiredArgsConstructor;
 import lt.insoft.Image;
+import lt.insoft.ImageDto;
 import lt.insoft.IngoingImageDto;
+import lt.insoft.Tag;
+import lt.insoft.TagDto;
 import org.imgscalr.Scalr;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @CrossOrigin
@@ -37,14 +54,14 @@ public class ImageController {
             imageResponseFileInputStream = new FileInputStream(IMAGE_PATH + uuid);
             bytes = imageResponseFileInputStream.readAllBytes();
         } catch (FileNotFoundException e) {
-            System.out.println("File wasn't found");
+            System.out.println("File wasn't found getImageByteArray");
         }
         return bytes;
     }
 
     @GetMapping(params = {"page", "size"})
-    public Page<Image> getPagedMetadata(@RequestParam("page") int page, @RequestParam("size") int size) {
-        Page<Image> resultPage;
+    public Page<ImageDto> getPagedMetadata(@RequestParam("page") int page, @RequestParam("size") int size) {
+        Page<ImageDto> resultPage;
         try {
             resultPage = imageService.findPaginated(page, size);
         } catch (IllegalArgumentException e) {
@@ -58,7 +75,12 @@ public class ImageController {
 
     @DeleteMapping("{id}")
     private void deleteImage(@PathVariable int id) {
-        imageService.deleteImage(id);
+        try {
+            imageService.deleteImage(id);
+        } catch (RuntimeException e) {
+
+        }
+
     }
 
     //could throw MaxUploadSizeExceededException
@@ -78,11 +100,15 @@ public class ImageController {
         File newImageThumbnailFile = new File(IMAGE_PATH + uuid + THUMBNAIL_SUFFIX);
         assert newImageThumbnailBuffered != null;
         ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile);
-        Image imageDetailsToDb = new Image(file.getName(), file.getDate(), file.getDescription(), uuid.toString());
+        Set<Tag> tags = new HashSet<>();
+        tags.add(new Tag("Cats"));
+        tags.add(new Tag("Dogs"));
+
+        Image imageDetailsToDb = new Image(file.getName(), file.getDate(), file.getDescription(), uuid.toString(), tags);
         try {
             imageService.saveImage(imageDetailsToDb);
         } catch (DataIntegrityViolationException e) {
-            System.out.println("A field is too big");
+            e.printStackTrace();
         }
         return imageDetailsToDb.getId();
     }

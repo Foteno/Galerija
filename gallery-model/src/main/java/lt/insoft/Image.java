@@ -1,8 +1,23 @@
 package lt.insoft;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.ConstraintMode;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+import java.util.Set;
 
 
 @Getter
@@ -22,12 +37,19 @@ public class Image {
     @Column
     private String description;
     @Column
-    private String uuidName;
+    private String uuid;
+    @ManyToMany(cascade =  CascadeType.MERGE, fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "Image_Tag",
+            joinColumns = @JoinColumn(name = "image_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id", referencedColumnName = "id"))
+    private Set<Tag> tags;
 
-    public Image(String name, String date, String description, String uuid) {
+    public Image(String name, String date, String description, String uuid, Set<Tag> tags) {
         this.name = name;
         this.date = date;
         this.description = description;
-        this.uuidName = uuid;
+        this.uuid = uuid;
+        this.tags = tags;
     }
 }
