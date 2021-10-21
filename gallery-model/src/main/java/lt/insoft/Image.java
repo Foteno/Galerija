@@ -38,11 +38,11 @@ public class Image {
     private String description;
     @Column
     private String uuid;
-    @ManyToMany(cascade =  CascadeType.MERGE, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST } , fetch = FetchType.LAZY)
     @JoinTable(
             name = "Image_Tag",
-            joinColumns = @JoinColumn(name = "image_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id", referencedColumnName = "id"))
+            joinColumns = @JoinColumn(name = "image_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags;
 
     public Image(String name, String date, String description, String uuid, Set<Tag> tags) {

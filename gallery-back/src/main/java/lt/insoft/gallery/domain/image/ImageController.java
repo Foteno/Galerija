@@ -1,11 +1,9 @@
 package lt.insoft.gallery.domain.image;
 
 import lombok.RequiredArgsConstructor;
-import lt.insoft.Image;
-import lt.insoft.ImageDto;
+import lt.insoft.ImagePreviewDto;
+import lt.insoft.ImageFullDto;
 import lt.insoft.IngoingImageDto;
-import lt.insoft.Tag;
-import lt.insoft.TagDto;
 import org.imgscalr.Scalr;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -31,8 +29,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @CrossOrigin
@@ -47,7 +43,7 @@ public class ImageController {
 
     @ResponseBody
     @GetMapping(value = "{file-uuid}", produces = MediaType.IMAGE_JPEG_VALUE)
-    private byte[] getImageByteArray(@PathVariable("file-uuid") String uuid) throws IOException {
+    public byte[] getImageByteArray(@PathVariable("file-uuid") String uuid) throws IOException {
         FileInputStream imageResponseFileInputStream;
         byte[] bytes = {};
         try {
@@ -59,9 +55,14 @@ public class ImageController {
         return bytes;
     }
 
+    @GetMapping(value = "/details/{file-uuid}")
+    public ImageFullDto getImageFullDetails(@PathVariable("file-uuid") String uuid) {
+        return imageService.findByUuid(uuid);
+    }
+
     @GetMapping(params = {"page", "size"})
-    public Page<ImageDto> getPagedMetadata(@RequestParam("page") int page, @RequestParam("size") int size) {
-        Page<ImageDto> resultPage;
+    public Page<ImagePreviewDto> getPagedMetadata(@RequestParam("page") int page, @RequestParam("size") int size) {
+        Page<ImagePreviewDto> resultPage;
         try {
             resultPage = imageService.findPaginated(page, size);
         } catch (IllegalArgumentException e) {
@@ -100,17 +101,15 @@ public class ImageController {
         File newImageThumbnailFile = new File(IMAGE_PATH + uuid + THUMBNAIL_SUFFIX);
         assert newImageThumbnailBuffered != null;
         ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile);
-        Set<Tag> tags = new HashSet<>();
-        tags.add(new Tag("Cats"));
-        tags.add(new Tag("Dogs"));
 
-        Image imageDetailsToDb = new Image(file.getName(), file.getDate(), file.getDescription(), uuid.toString(), tags);
+        ImageFullDto imageDetailsToDb = new ImageFullDto(file.getName(), file.getDate(),
+                file.getDescription(), uuid.toString(), file.getTags());
         try {
             imageService.saveImage(imageDetailsToDb);
         } catch (DataIntegrityViolationException e) {
             e.printStackTrace();
         }
-        return imageDetailsToDb.getId();
+        return 1;
     }
 
     @GetMapping("/test")
