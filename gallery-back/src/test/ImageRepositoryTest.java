@@ -1,6 +1,6 @@
 import lombok.RequiredArgsConstructor;
-import lt.insoft.Image;
-import lt.insoft.gallery.domain.image.ImageRepository;
+import lt.insoft.gallery.Image;
+import lt.insoft.gallery.gallery.domain.image.ImageRepository;
 import org.junit.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 

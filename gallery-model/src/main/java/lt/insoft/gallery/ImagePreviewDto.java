@@ -1,9 +1,7 @@
-package lt.insoft;
+package lt.insoft.gallery;
 
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.Set;
 
 @Getter
 @Setter

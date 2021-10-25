@@ -1,4 +1,4 @@
-package lt.insoft;
+package lt.insoft.gallery;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -6,10 +6,8 @@ import lombok.Setter;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.ConstraintMode;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -30,14 +28,19 @@ public class Image {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private int id;
+
     @Column
     private String name;
+
     @Column
     private String date;
+
     @Column
     private String description;
+
     @Column
     private String uuid;
+
     @ManyToMany(cascade = { CascadeType.MERGE, CascadeType.PERSIST } , fetch = FetchType.LAZY)
     @JoinTable(
             name = "Image_Tag",

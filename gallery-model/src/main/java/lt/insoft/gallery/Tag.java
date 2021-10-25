@@ -1,4 +1,4 @@
-package lt.insoft;
+package lt.insoft.gallery;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +23,7 @@ public class Tag implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private int id;
+
     @Column(unique = true)
     private String name;
 

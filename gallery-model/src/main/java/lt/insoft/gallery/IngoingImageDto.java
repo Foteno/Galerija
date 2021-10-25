@@ -1,4 +1,4 @@
-package lt.insoft;
+package lt.insoft.gallery;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
