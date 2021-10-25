@@ -17,12 +17,13 @@ import java.io.Serializable;
 @Entity
 @Table
 @NoArgsConstructor
-public class Tag implements Serializable {
+public class Tag implements Serializable { // FIXME: kodėl Serializable? Kada serializuojama? Ar reikia/nereikia?
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    private int id;
+    private int id; // FIXME: atskirti fieldus newline'ais
+
     @Column(unique = true)
     private String name;
 

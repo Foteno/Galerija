@@ -1,4 +1,4 @@
-package lt.insoft;
+package lt.insoft; // FIXME: package turįtų būti lt.insoft.GALLERY.DOMAIN.<IMAGE/TAG>
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

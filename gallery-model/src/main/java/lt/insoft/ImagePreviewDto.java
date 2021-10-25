@@ -3,7 +3,7 @@ package lt.insoft;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Set;
+import java.util.Set; // FIXME: nenaudojamas importas
 
 @Getter
 @Setter

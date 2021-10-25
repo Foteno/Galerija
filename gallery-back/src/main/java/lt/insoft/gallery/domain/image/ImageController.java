@@ -36,21 +36,22 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/image")
 public class ImageController {
-    private static final String IMAGE_PATH = "C:\\Users\\patrikas.styra\\Desktop\\Images\\";
+    private static final String IMAGE_PATH = "C:\\Users\\patrikas.styra\\Desktop\\Images\\"; // FIXME: ImageService irgi tokia pati konstanta. Kas su tuo negerai?
     private static final String THUMBNAIL_SUFFIX = "small";
-    private static final int HEIGHT = 200, WIDTH = 200;
-    private final ImageService imageService;
+    private static final int HEIGHT = 200;
+    private static final int WIDTH = 200; // FIXME: pagal konvenciją kiekvienam laukui atskira eilutė
+    private final IImageService imageService;
 
     @ResponseBody
     @GetMapping(value = "{file-uuid}", produces = MediaType.IMAGE_JPEG_VALUE)
     public byte[] getImageByteArray(@PathVariable("file-uuid") String uuid) throws IOException {
-        FileInputStream imageResponseFileInputStream;
+        FileInputStream imageResponseFileInputStream; // FIXME: kur uždaromas streamas? kokios problemos gali kilti neuždarinėjant atidarytų streamų?
         byte[] bytes = {};
         try {
             imageResponseFileInputStream = new FileInputStream(IMAGE_PATH + uuid);
             bytes = imageResponseFileInputStream.readAllBytes();
         } catch (FileNotFoundException e) {
-            System.out.println("File wasn't found getImageByteArray");
+            System.out.println("File wasn't found getImageByteArray"); // FIXME: ką tokiu atveju gaus useris? ką turėtų gauti?
         }
         return bytes;
     }
@@ -69,7 +70,7 @@ public class ImageController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
         }
         if (page > resultPage.getTotalPages()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bandoma gauti daugiau psl nei yra");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bandoma gauti daugiau psl nei yra"); // FIXME: ar čia geriau 404 ar 400?
         }
         return resultPage;
     }
@@ -78,7 +79,7 @@ public class ImageController {
     private void deleteImage(@PathVariable int id) {
         try {
             imageService.deleteImage(id);
-        } catch (RuntimeException e) {
+        } catch (RuntimeException e) { // FIXME: kas čia galėtų būti geriau?
 
         }
 
@@ -93,14 +94,14 @@ public class ImageController {
         BufferedImage newImageThumbnailBuffered = null;
         image.transferTo(newImageFile);
         try {
-            BufferedImage newImageBuffered = ImageIO.read(newImageFile);
+            BufferedImage newImageBuffered = ImageIO.read(newImageFile); // FIXME: kodėl reikia skaityti iš disko image, kurį ką tik ten įrašei?
             newImageThumbnailBuffered = Scalr.resize(newImageBuffered, WIDTH, HEIGHT);
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // FIXME: naudoti logginimą. Įvykus klaidai tęsiame darbą toliau lyg niekur nieko?
         }
         File newImageThumbnailFile = new File(IMAGE_PATH + uuid + THUMBNAIL_SUFFIX);
         assert newImageThumbnailBuffered != null;
-        ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile);
+        ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile); // FIXME: man vis dar nepatinka PNG/JPEG maišymas kode. Neaišku, kur/ar įvyksta konvertavimas
 
         ImageFullDto imageDetailsToDb = new ImageFullDto(file.getName(), file.getDate(),
                 file.getDescription(), uuid.toString(), file.getTags());
@@ -109,10 +110,10 @@ public class ImageController {
         } catch (DataIntegrityViolationException e) {
             e.printStackTrace();
         }
-        return 1;
+        return 1; // FIXME: kodėl 1?
     }
 
-    @GetMapping("/test")
+    @GetMapping("/test") // FIXME: useless
     public @ResponseBody
     String index() {
         return "It works";
