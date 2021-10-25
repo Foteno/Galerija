@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.imgscalr</groupId>
       <artifactId>imgscalr-lib</artifactId>
-      <version>4.2</version>
+      <version>4.2</version> <!--FIXME: čia ir kitur naudoti dependencyManagement-->
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
