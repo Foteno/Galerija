@@ -10,7 +10,6 @@ import lt.insoft.gallery.gallery.domain.constants.Constants;
 import org.imgscalr.Scalr;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,7 +50,7 @@ public class ImageController {
     private final IImageService imageService;
 
     @ResponseBody
-    @GetMapping(value = "{file-uuid}", produces = MediaType.IMAGE_JPEG_VALUE)
+    @GetMapping(value = "{file-uuid}")
     public byte[] getImageByteArray(@PathVariable("file-uuid") String uuid) throws IOException {
         byte[] bytes;
         try (FileInputStream imageResponseFileInputStream = new FileInputStream(IMAGE_PATH + uuid)) {
@@ -70,7 +69,10 @@ public class ImageController {
         if (imageFullDto == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        saveImage(imageFile, uuid);
+
+        if (!imageFile.getName().equals("")) {
+            saveImage(imageFile, uuid);
+        }
         imageFullDto.setName(file.getName());
         imageFullDto.setDate(file.getDate());
         imageFullDto.setDescription(file.getDescription());
@@ -78,7 +80,7 @@ public class ImageController {
 
         imageService.updateImage(imageFullDto);
 
-        System.out.println(imageFullDto.getName());
+        log.info(imageFullDto.getName());
         return 1;
     }
 
@@ -134,6 +136,9 @@ public class ImageController {
             log.error("No bytes read");
         }
         inputStream.close();
+        if (buffer.length == 0) {
+            return;
+        }
 
         try (OutputStream outputStream = new FileOutputStream(newImageFile)) {
             outputStream.write(buffer);

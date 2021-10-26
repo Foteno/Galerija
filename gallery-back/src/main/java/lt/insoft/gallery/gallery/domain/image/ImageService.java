@@ -85,10 +85,24 @@ public class ImageService implements IImageService {
 
     private Set<Tag> convertToTagFromTagDto(ImageFullDto imageFullDto) {
         List<String> tagNames = new ArrayList<>();
-        for (TagDto tag : imageFullDto.getTags()) {
+        Set<TagDto> tagDtos = imageFullDto.getTags();
+        if (tagDtos == null){
+            return new HashSet<>();
+        }
+        for (TagDto tag : tagDtos) {
             tagNames.add(tag.getName());
         }
-        return tagRepository.getByNameIn(tagNames);
+        Set<Tag> tagsFromDb = tagRepository.getByNameIn(tagNames);
+
+        List<String> tagNamesFromDb = new ArrayList<>();
+        tagsFromDb.stream().map(Tag::getName).forEach(tagNamesFromDb::add);
+
+        for (String tagName: tagNames) {
+            if (!tagNamesFromDb.contains(tagName)) {
+                tagsFromDb.add(new Tag(tagName));
+            }
+        }
+        return tagsFromDb;
     }
 
 

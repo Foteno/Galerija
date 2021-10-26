@@ -26,11 +26,11 @@
     <maven.compiler.target>11</maven.compiler.target>
   </properties>
 
+
   <dependencies>
     <dependency>
       <groupId>org.imgscalr</groupId>
       <artifactId>imgscalr-lib</artifactId>
-      <version>4.2</version> <!--FIXME: čia ir kitur naudoti dependencyManagement-->
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -43,24 +43,14 @@
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <version>1.20</version>
-    </dependency>
-    <dependency>
-      <groupId>lt.insoft</groupId>
-      <artifactId>gallery-model</artifactId>
-      <version>1.0-SNAPSHOT</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -70,6 +60,14 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>lt.insoft</groupId>
+      <artifactId>gallery-model</artifactId>
     </dependency>
 
   </dependencies>
