@@ -70,7 +70,7 @@ public class ImageController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        if (!imageFile.getName().equals("")) {
+        if (!imageFile.getName().equals("")) { // FIXME: o jei name null? o jei " "? arba non-breaking space arba TAB simbolis?
             saveImage(imageFile, uuid);
         }
         imageFullDto.setName(file.getName());
@@ -78,7 +78,7 @@ public class ImageController {
         imageFullDto.setDescription(file.getDescription());
         imageFullDto.setTags(file.getTags());
 
-        int a = imageService.updateImage(imageFullDto);
+        int a = imageService.updateImage(imageFullDto); // FIXME: kas yra "a"?
 
         log.info(imageFullDto.getName());
         return a;
@@ -95,8 +95,8 @@ public class ImageController {
         Page<ImagePreviewDto> resultPage;
         try {
             resultPage = imageService.findPaginatedByNameOrDescription(page, size, name);
-        } catch (IllegalArgumentException e) {
-            log.error("Wrong parameters getPagedImagesByNameAndDescription");
+        } catch (IllegalArgumentException e) { // FIXME: iš kur gali būti throwinamas šis exceptionas? Paprastai tokias klaidas reiktų spręsti ne catch'inant iš neaišku kur giliai ateinančius exceptionus, bet per validaciją
+            log.error("Wrong parameters getPagedImagesByNameAndDescription"); // FIXME: jei išloggintum exception'ą, metodo pavadinimo čia nurodyti nereiktų
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
         }
         if (page > resultPage.getTotalPages()) {

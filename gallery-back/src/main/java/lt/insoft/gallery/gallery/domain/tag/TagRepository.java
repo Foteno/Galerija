@@ -7,6 +7,6 @@ import java.util.Collection;
 import java.util.Set;
 
 public interface TagRepository extends JpaRepository<Tag, Integer> {
-    Tag getByName(String name);
+    Tag getByName(String name); // FIXME: unused
     Set<Tag> getByNameIn(Collection<String> name);
 }

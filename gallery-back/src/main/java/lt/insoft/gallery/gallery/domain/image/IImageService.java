@@ -21,5 +21,5 @@ public interface IImageService {
 
     void deleteImage(int id);
 
-    ImageFullDto getImageById(int id);
+    ImageFullDto getImageById(int id); // FIXME: nenaudojamas
 }

@@ -107,6 +107,7 @@ public class ImageService implements IImageService {
         countQuery.where(orNameDescription);
         totalCount = entityManager.createQuery(countQuery).getSingleResult();
 
+        // FIXME: nereikalingas kintamasis, galima returninti tiesiogiai
         PageImpl<ImagePreviewDto> page1 = new PageImpl<>(images.stream().map(this::convertToImageDto).toList(),
                 PageRequest.of(page, size), totalCount);
 
@@ -121,6 +122,7 @@ public class ImageService implements IImageService {
 
     @Override
     public Page<ImagePreviewDto> findPaginatedByNameOrDescription(int page, int size, String name) {
+        // FIXME: nereikalingas kintamasis, galima returninti tiesiogiai
         Page<ImagePreviewDto> images = getImageByNameOrDescriptionCriteria(page, size, name);
         return images;
     }
@@ -132,15 +134,15 @@ public class ImageService implements IImageService {
         if (image == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        Set<TagDto> set = getTagDtos(image);
+        Set<TagDto> set = getTagDtos(image); // FIXME: blogas kintamojo pavadinimas
         ImageFullDto imageFullDto = new ImageFullDto(image.getName(), image.getDate(),
                 image.getDescription(), uuid, set);
-        imageFullDto.setId(image.getId());
+        imageFullDto.setId(image.getId()); // FIXME: kodėl kitką paduodi per konstruktorių, bet id settini atskirai?
         return imageFullDto;
     }
 
     @Override
-    public ImagePreviewDto convertToImageDto(Image image) {
+    public ImagePreviewDto convertToImageDto(Image image) { // FIXME: kodėl public?
         return new ImagePreviewDto(image.getName(), image.getDescription(), image.getUuid());
     }
 
@@ -156,7 +158,7 @@ public class ImageService implements IImageService {
         image.setTags(tags);
 
         imageRepository.save(image);
-        return 1;
+        return 1; // FIXME
     }
 
     @Override
@@ -169,7 +171,7 @@ public class ImageService implements IImageService {
         imageRepository.save(image);
     }
 
-    private Set<Tag> convertToTagFromTagDto(ImageFullDto imageFullDto) {
+    private Set<Tag> convertToTagFromTagDto(ImageFullDto imageFullDto) { // FIXME: metodas pavadintas ...FromTagDto, bet argumentas ImageDto
         List<String> tagNames = imageFullDto.getTags()
                 .stream()
                 .map(TagDto::getName)
@@ -212,7 +214,7 @@ public class ImageService implements IImageService {
         }
     }
 
-    private void deleteImageFile(File imageFile, String s) {
+    private void deleteImageFile(File imageFile, String s) { // FIXME: kas yra "s"?
         if (imageFile.delete()) {
             log.info(s + " deleted");
         } else {
@@ -221,7 +223,7 @@ public class ImageService implements IImageService {
     }
 
     @Override
-    public ImageFullDto getImageById(int id) {
+    public ImageFullDto getImageById(int id) { // FIXME: ne transakcinis metodas. klaidos negauni tik todė, kad jis dar ir nenaudojamas
         Image image = imageRepository.findById(id);
         Set<TagDto> set = getTagDtos(image);
         ImageFullDto imageFullDto = new ImageFullDto(image.getName(), image.getDate(), image.getDescription(),

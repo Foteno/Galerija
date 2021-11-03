@@ -42,7 +42,7 @@
     <maven.compiler.target>11</maven.compiler.target>
   </properties>
 
-
+<!--FIXME: kartoji daug dependency, kurie yra gallery-model. jų techniškai nebūtina čia aprašyti-->
   <dependencies>
     <dependency>
       <groupId>org.hibernate</groupId>

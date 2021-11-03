@@ -32,6 +32,7 @@ public class User {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
     private Set<Image> images;
 
+    // FIXME: nenaudojamas konstruktorius
     public User(String username, String dateCreated, Set<Image> images) {
         this.username = username;
         this.dateCreated = dateCreated;

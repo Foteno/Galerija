@@ -1,4 +1,4 @@
-package lt.insoft.gallery;
+package lt.insoft.gallery; // FIXME: turėtų būti lt.insoft.gallery.domain.image. Kitur model'yje atitinkamai
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
