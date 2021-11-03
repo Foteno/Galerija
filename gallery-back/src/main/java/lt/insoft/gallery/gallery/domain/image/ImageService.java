@@ -3,15 +3,15 @@ package lt.insoft.gallery.gallery.domain.image;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.apachecommons.CommonsLog;
 import lt.insoft.gallery.Image;
-import lt.insoft.gallery.ImagePreviewDto;
 import lt.insoft.gallery.ImageFullDto;
+import lt.insoft.gallery.ImagePreviewDto;
 import lt.insoft.gallery.Image_;
 import lt.insoft.gallery.Tag;
 import lt.insoft.gallery.TagDto;
 import lt.insoft.gallery.Tag_;
-import lt.insoft.gallery.gallery.domain.tag.TagRepository;
-import lt.insoft.gallery.gallery.domain.exceptions.ImageNotDeletedRuntimeException;
 import lt.insoft.gallery.gallery.domain.constants.Constants;
+import lt.insoft.gallery.gallery.domain.exceptions.ImageNotDeletedRuntimeException;
+import lt.insoft.gallery.gallery.domain.tag.TagRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -76,8 +76,7 @@ public class ImageService implements IImageService {
         return images;
     }*/
 
-    private List<Image> getImageByDescription(int page, int size, String name) {
-
+    private Page<ImagePreviewDto> getImageByNameOrDescriptionCriteria(int page, int size, String name) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Tuple> criteriaQuery = builder.createTupleQuery();
         Root<Image> root = criteriaQuery.from(Image.class);
@@ -100,7 +99,18 @@ public class ImageService implements IImageService {
         for (Tuple tuple: tuples) {
             images.add(tuple.get(root));
         }
-        return images;
+
+        Long totalCount;
+        CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+        Root<Image> root1 =  countQuery.from(Image.class);
+        countQuery.select(builder.count(root1));
+        countQuery.where(orNameDescription);
+        totalCount = entityManager.createQuery(countQuery).getSingleResult();
+
+        PageImpl<ImagePreviewDto> page1 = new PageImpl<>(images.stream().map(this::convertToImageDto).toList(),
+                PageRequest.of(page, size), totalCount);
+
+        return page1;
     }
 
     @Override
@@ -111,8 +121,8 @@ public class ImageService implements IImageService {
 
     @Override
     public Page<ImagePreviewDto> findPaginatedByNameOrDescription(int page, int size, String name) {
-        List<Image> images = getImageByDescription(page, size, name);
-        return new PageImpl<>(images.stream().map(this::convertToImageDto).toList());
+        Page<ImagePreviewDto> images = getImageByNameOrDescriptionCriteria(page, size, name);
+        return images;
     }
 
     @Override
