@@ -78,10 +78,10 @@ public class ImageController {
         imageFullDto.setDescription(file.getDescription());
         imageFullDto.setTags(file.getTags());
 
-        imageService.updateImage(imageFullDto);
+        int a = imageService.updateImage(imageFullDto);
 
         log.info(imageFullDto.getName());
-        return 1;
+        return a;
     }
 
     @GetMapping(value = "/details/{file-uuid}")
@@ -89,15 +89,36 @@ public class ImageController {
         return imageService.findByUuid(uuid);
     }
 
-    @GetMapping(params = {"page", "size"})
-    public Page<ImagePreviewDto> getPagedMetadata(@RequestParam("page") int page, @RequestParam("size") int size) {
+    @GetMapping(params = {"page", "size", "name"})
+    public Page<ImagePreviewDto> getPagedImagesByNameAndDescription(@RequestParam("page") int page, @RequestParam("size") int size,
+                                                                    @RequestParam("name") String name) {
         Page<ImagePreviewDto> resultPage;
         try {
-            resultPage = imageService.findPaginated(page, size);
+            resultPage = imageService.findPaginatedByNameOrDescription(page, size, name);
         } catch (IllegalArgumentException e) {
+            log.error("Wrong parameters getPagedImagesByNameAndDescription");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
         }
         if (page > resultPage.getTotalPages()) {
+            log.error("Try to get more pages, than there is getPagedImagesByNameAndDescription");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bandoma gauti daugiau psl nei yra");
+        }
+        return resultPage;
+    }
+
+
+    @GetMapping(params = {"page", "size", "tag"})
+    public Page<ImagePreviewDto> getPagedImagesByTag(@RequestParam("page") int page, @RequestParam("size") int size,
+                                                     @RequestParam("tag") String name) {
+        Page<ImagePreviewDto> resultPage;
+        try {
+            resultPage = imageService.findImageByTagUsingSpecification(page, size, name);
+        } catch (IllegalArgumentException e) {
+            log.error("Wrong parameters getPagedImagesByTag");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
+        }
+        if (page > resultPage.getTotalPages()) {
+            log.error("Try to get more pages, than there is getPagedImagesByTag");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bandoma gauti daugiau psl nei yra");
         }
         return resultPage;
@@ -155,9 +176,15 @@ public class ImageController {
         ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile);
     }
 
+    @GetMapping("/test1")
+    @ResponseBody
+    public Page<ImagePreviewDto> findCount() {
+        return imageService.findPaginatedByNameOrDescription(0, 5, "ba");
+    }
+
     @GetMapping("/test")
-    public @ResponseBody
-    String index() {
-        return "It works";
+    @ResponseBody
+    public String index() {
+        return "it works!";
     }
 }

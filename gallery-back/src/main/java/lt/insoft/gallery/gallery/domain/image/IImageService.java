@@ -7,7 +7,9 @@ import org.springframework.data.domain.Page;
 
 public interface IImageService {
 
-    Page<ImagePreviewDto> findPaginated(int page, int size) throws IllegalArgumentException;
+    Page<ImagePreviewDto> findImageByTagUsingSpecification(int page, int size, String query);
+
+    Page<ImagePreviewDto> findPaginatedByNameOrDescription(int page, int size, String query);
 
     ImagePreviewDto convertToImageDto(Image image);
 

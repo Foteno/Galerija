@@ -5,24 +5,38 @@ import lombok.extern.apachecommons.CommonsLog;
 import lt.insoft.gallery.Image;
 import lt.insoft.gallery.ImagePreviewDto;
 import lt.insoft.gallery.ImageFullDto;
+import lt.insoft.gallery.Image_;
 import lt.insoft.gallery.Tag;
 import lt.insoft.gallery.TagDto;
+import lt.insoft.gallery.Tag_;
 import lt.insoft.gallery.gallery.domain.tag.TagRepository;
 import lt.insoft.gallery.gallery.domain.exceptions.ImageNotDeletedRuntimeException;
 import lt.insoft.gallery.gallery.domain.constants.Constants;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,16 +46,73 @@ public class ImageService implements IImageService {
     private final ImageRepository imageRepository;
     private final TagRepository tagRepository;
 
-    @Override
-    @Transactional
-    public Page<ImagePreviewDto> findPaginated(int page, int size) {
-        Page<Image> imagePage = imageRepository.findAll(PageRequest.of(page, size));
-        return imagePage.map(this::convertToImageDto);
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    private Specification<Image> tagsLike(String name) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.like(criteriaBuilder.upper(root.join(Image_.TAGS).get(Tag_.NAME)),
+                        "%"+ name.toUpperCase(Locale.ROOT) + "%");
+    }
+
+    /*private List<Image> getImagesByTag(String name) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Tuple> criteriaQuery = builder.createTupleQuery();
+        Root<Image> root = criteriaQuery.from(Image.class);
+
+        criteriaQuery.multiselect(root);
+        criteriaQuery.where(builder.like(builder.upper(root.join(Image_.TAGS).get(Tag_.NAME)),
+                "%"+ name.toUpperCase(Locale.ROOT) + "%"));
+        TypedQuery<Tuple> typedQuery =  entityManager.createQuery(criteriaQuery);
+        //typedQuery.setFirstResult()
+        List<Tuple> tuples = typedQuery.getResultList();
+        List<Image> images = new ArrayList<>();
+        for (Tuple tuple: tuples) {
+            Image image = tuple.get(root);
+            System.out.println(image.getName());
+            System.out.println();
+            images.add(image);
+        }
+        return images;
+    }*/
+
+    private List<Image> getImageByDescription(int page, int size, String name) {
+
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Tuple> criteriaQuery = builder.createTupleQuery();
+        Root<Image> root = criteriaQuery.from(Image.class);
+
+        Predicate descriptionPredicate = builder.like(builder.upper(root.get(Image_.DESCRIPTION)),
+                "%"+ name.toUpperCase(Locale.ROOT) + "%");
+        Predicate namePredicate = builder.like(builder.upper(root.get(Image_.NAME)),
+                "%"+ name.toUpperCase(Locale.ROOT) + "%");
+        Predicate orNameDescription = builder.or(descriptionPredicate, namePredicate);
+
+        criteriaQuery.multiselect(root);
+        criteriaQuery.where(orNameDescription);
+
+        TypedQuery<Tuple> typedQuery =  entityManager.createQuery(criteriaQuery);
+        typedQuery.setFirstResult(page * size);
+        typedQuery.setMaxResults(size);
+
+        List<Tuple> tuples = typedQuery.getResultList();
+        List<Image> images = new ArrayList<>();
+        for (Tuple tuple: tuples) {
+            images.add(tuple.get(root));
+        }
+        return images;
     }
 
     @Override
-    public ImagePreviewDto convertToImageDto(Image image) {
-        return new ImagePreviewDto(image.getName(), image.getDescription(), image.getUuid());
+    public Page<ImagePreviewDto> findImageByTagUsingSpecification(int page, int size, String tag) {
+        Page<Image> image = imageRepository.findAll(tagsLike(tag), PageRequest.of(page, size));
+        return image.map(this::convertToImageDto);
+    }
+
+    @Override
+    public Page<ImagePreviewDto> findPaginatedByNameOrDescription(int page, int size, String name) {
+        List<Image> images = getImageByDescription(page, size, name);
+        return new PageImpl<>(images.stream().map(this::convertToImageDto).toList());
     }
 
     @Override
@@ -56,6 +127,11 @@ public class ImageService implements IImageService {
                 image.getDescription(), uuid, set);
         imageFullDto.setId(image.getId());
         return imageFullDto;
+    }
+
+    @Override
+    public ImagePreviewDto convertToImageDto(Image image) {
+        return new ImagePreviewDto(image.getName(), image.getDescription(), image.getUuid());
     }
 
     @Override
@@ -76,7 +152,7 @@ public class ImageService implements IImageService {
     @Override
     @Transactional
     public void saveImage(ImageFullDto imageFullDto) {
-        Set<Tag> tags =  convertToTagFromTagDto(imageFullDto);
+        Set<Tag> tags = convertToTagFromTagDto(imageFullDto);
 
         Image image = new Image(imageFullDto.getName(), imageFullDto.getDate(), imageFullDto.getDescription(),
                 imageFullDto.getUuid(), tags);
@@ -84,20 +160,20 @@ public class ImageService implements IImageService {
     }
 
     private Set<Tag> convertToTagFromTagDto(ImageFullDto imageFullDto) {
-        List<String> tagNames = new ArrayList<>();
-        Set<TagDto> tagDtos = imageFullDto.getTags();
-        if (tagDtos == null){
-            return new HashSet<>();
-        }
-        for (TagDto tag : tagDtos) {
-            tagNames.add(tag.getName());
-        }
+        List<String> tagNames = imageFullDto.getTags()
+                .stream()
+                .map(TagDto::getName)
+                .collect(Collectors.toList());
+
         Set<Tag> tagsFromDb = tagRepository.getByNameIn(tagNames);
 
-        List<String> tagNamesFromDb = new ArrayList<>();
-        tagsFromDb.stream().map(Tag::getName).forEach(tagNamesFromDb::add);
+        List<String> tagNamesFromDb = tagsFromDb
+                .stream()
+                .map(Tag::getName)
+                .collect(Collectors.toList());
 
-        for (String tagName: tagNames) {
+
+        for (String tagName : tagNames) {
             if (!tagNamesFromDb.contains(tagName)) {
                 tagsFromDb.add(new Tag(tagName));
             }
@@ -151,4 +227,5 @@ public class ImageService implements IImageService {
         }
         return set;
     }
+
 }
