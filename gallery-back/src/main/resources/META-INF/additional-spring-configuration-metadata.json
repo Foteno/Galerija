@@ -1,0 +1,13 @@
+{
+  "properties": [
+    {
+      "name": "lt.insoft.gallery.jwtSecret",
+      "type": "java.lang.String",
+      "description": "Description for lt.insoft.gallery.JwtSecret."
+    },
+    {
+      "name": "lt.insoft.gallery.jwtExpirationMs",
+      "type": "java.lang.String",
+      "description": "Description for lt.insoft.gallery.jwtExpirationMs."
+    }
+  ] }

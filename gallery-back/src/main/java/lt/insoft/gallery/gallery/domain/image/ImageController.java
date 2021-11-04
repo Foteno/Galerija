@@ -10,6 +10,7 @@ import lt.insoft.gallery.gallery.domain.constants.Constants;
 import org.imgscalr.Scalr;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,6 +52,7 @@ public class ImageController {
 
     @ResponseBody
     @GetMapping(value = "{file-uuid}")
+    @Secured({"ROLE_user", "ROLE_admin"})
     public byte[] getImageByteArray(@PathVariable("file-uuid") String uuid) throws IOException {
         byte[] bytes;
         try (FileInputStream imageResponseFileInputStream = new FileInputStream(IMAGE_PATH + uuid)) {
@@ -63,6 +65,7 @@ public class ImageController {
     }
 
     @PutMapping(consumes = "multipart/form-data", value = "/details/{file-uuid}")
+    @Secured({"ROLE_user", "ROLE_admin"})
     public int putImageFullDetails(@ModelAttribute IngoingImageDto file, @PathVariable("file-uuid") String uuid) throws IOException {
         MultipartFile imageFile = file.getImage();
         ImageFullDto imageFullDto = imageService.findByUuid(uuid);
@@ -78,18 +81,20 @@ public class ImageController {
         imageFullDto.setDescription(file.getDescription());
         imageFullDto.setTags(file.getTags());
 
-        int a = imageService.updateImage(imageFullDto);
+        int updatedImageId = imageService.updateImage(imageFullDto);
 
         log.info(imageFullDto.getName());
-        return a;
+        return updatedImageId;
     }
 
     @GetMapping(value = "/details/{file-uuid}")
+    @Secured({"ROLE_user", "ROLE_admin"})
     public ImageFullDto getImageFullDetails(@PathVariable("file-uuid") String uuid) {
         return imageService.findByUuid(uuid);
     }
 
     @GetMapping(params = {"page", "size", "name"})
+    @Secured({"ROLE_user", "ROLE_admin"})
     public Page<ImagePreviewDto> getPagedImagesByNameAndDescription(@RequestParam("page") int page, @RequestParam("size") int size,
                                                                     @RequestParam("name") String name) {
         Page<ImagePreviewDto> resultPage;
@@ -108,6 +113,7 @@ public class ImageController {
 
 
     @GetMapping(params = {"page", "size", "tag"})
+    @Secured({"ROLE_user", "ROLE_admin"})
     public Page<ImagePreviewDto> getPagedImagesByTag(@RequestParam("page") int page, @RequestParam("size") int size,
                                                      @RequestParam("tag") String name) {
         Page<ImagePreviewDto> resultPage;
@@ -125,6 +131,7 @@ public class ImageController {
     }
 
     @DeleteMapping("{id}")
+    @Secured({"ROLE_user", "ROLE_admin"})
     private void deleteImage(@PathVariable int id) {
         try {
             imageService.deleteImage(id);
@@ -136,6 +143,7 @@ public class ImageController {
 
     //could throw MaxUploadSizeExceededException
     @PostMapping(consumes = "multipart/form-data")
+    @Secured({"ROLE_user", "ROLE_admin"})
     private int postImage(@ModelAttribute IngoingImageDto file) throws IOException {
         MultipartFile image = file.getImage();
         UUID uuid = UUID.randomUUID();
