@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.domain.constants;
+package lt.insoft.gallery.domain.constants;
 
 public class Constants {
     public static final String IMAGE_STORAGE_PATH = "C:\\Users\\patrikas.styra\\Desktop\\Images\\";

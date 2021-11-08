@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.domain.user;
+package lt.insoft.gallery.domain.user;
 
 import lombok.RequiredArgsConstructor;
 import lt.insoft.gallery.User;
@@ -16,10 +16,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(s);
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username);
         if (user == null) {
-            throw new UsernameNotFoundException("User Not Found with username: " + s);
+            throw new UsernameNotFoundException("User Not Found with username: " + username);
         }
         return UserDetailsImpl.build(user);
     }

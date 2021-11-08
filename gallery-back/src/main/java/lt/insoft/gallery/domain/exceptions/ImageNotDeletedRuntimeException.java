@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.domain.exceptions;
+package lt.insoft.gallery.domain.exceptions;
 
 public class ImageNotDeletedRuntimeException extends RuntimeException {
 

@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.Security;
+package lt.insoft.gallery.Security;
 
 import lombok.extern.apachecommons.CommonsLog;
 import org.springframework.security.core.AuthenticationException;

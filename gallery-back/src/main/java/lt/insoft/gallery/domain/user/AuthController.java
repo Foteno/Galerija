@@ -1,12 +1,12 @@
-package lt.insoft.gallery.gallery.domain.user;
+package lt.insoft.gallery.domain.user;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.apachecommons.CommonsLog;
+import lt.insoft.gallery.Security.JwtResponse;
+import lt.insoft.gallery.Security.JwtUtils;
+import lt.insoft.gallery.Security.LoginRequest;
+import lt.insoft.gallery.Security.SignupRequest;
 import lt.insoft.gallery.User;
-import lt.insoft.gallery.gallery.Security.JwtResponse;
-import lt.insoft.gallery.gallery.Security.JwtUtils;
-import lt.insoft.gallery.gallery.Security.LoginRequest;
-import lt.insoft.gallery.gallery.Security.SignupRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

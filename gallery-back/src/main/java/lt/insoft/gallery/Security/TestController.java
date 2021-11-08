@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.Security;
+package lt.insoft.gallery.Security;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;

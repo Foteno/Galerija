@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.domain.user;
+package lt.insoft.gallery.domain.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;

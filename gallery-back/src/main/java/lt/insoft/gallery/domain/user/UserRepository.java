@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.domain.user;
+package lt.insoft.gallery.domain.user;
 
 import lt.insoft.gallery.User;
 import org.springframework.data.jpa.repository.JpaRepository;

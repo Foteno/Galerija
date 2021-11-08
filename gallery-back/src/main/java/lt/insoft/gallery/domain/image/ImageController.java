@@ -1,16 +1,21 @@
-package lt.insoft.gallery.gallery.domain.image;
+package lt.insoft.gallery.domain.image;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.apachecommons.CommonsLog;
 import lt.insoft.gallery.ImagePreviewDto;
 import lt.insoft.gallery.ImageFullDto;
 import lt.insoft.gallery.IngoingImageDto;
-import lt.insoft.gallery.gallery.domain.exceptions.ImageNotDeletedRuntimeException;
-import lt.insoft.gallery.gallery.domain.constants.Constants;
+import lt.insoft.gallery.domain.constants.Constants;
+import lt.insoft.gallery.domain.exceptions.ImageNotDeletedRuntimeException;
+import lt.insoft.gallery.domain.user.UserDetailsImpl;
+import lt.insoft.gallery.domain.user.UserRepository;
+import lt.insoft.gallery.domain.user.UserService;
 import org.imgscalr.Scalr;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +43,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
-@CrossOrigin
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/image")
@@ -49,12 +54,16 @@ public class ImageController {
     private static final int HEIGHT = Constants.THUMBNAIL_HEIGHT;
     private static final int WIDTH = Constants.THUMBNAIL_WIDTH;
     private final IImageService imageService;
+    private final UserService userService;
 
     @ResponseBody
     @GetMapping(value = "{file-uuid}")
     @Secured({"ROLE_user", "ROLE_admin"})
     public byte[] getImageByteArray(@PathVariable("file-uuid") String uuid) throws IOException {
         byte[] bytes;
+        if (!userService.isAllowedUser(uuid)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         try (FileInputStream imageResponseFileInputStream = new FileInputStream(IMAGE_PATH + uuid)) {
             bytes = imageResponseFileInputStream.readAllBytes();
         } catch (FileNotFoundException e) {
@@ -67,13 +76,17 @@ public class ImageController {
     @PutMapping(consumes = "multipart/form-data", value = "/details/{file-uuid}")
     @Secured({"ROLE_user", "ROLE_admin"})
     public int putImageFullDetails(@ModelAttribute IngoingImageDto file, @PathVariable("file-uuid") String uuid) throws IOException {
+        if (!userService.isAllowedUser(uuid)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
         MultipartFile imageFile = file.getImage();
         ImageFullDto imageFullDto = imageService.findByUuid(uuid);
         if (imageFullDto == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        if (!imageFile.getName().equals("")) {
+        if (!imageFile.getName().isBlank()) {
             saveImage(imageFile, uuid);
         }
         imageFullDto.setName(file.getName());
@@ -90,6 +103,9 @@ public class ImageController {
     @GetMapping(value = "/details/{file-uuid}")
     @Secured({"ROLE_user", "ROLE_admin"})
     public ImageFullDto getImageFullDetails(@PathVariable("file-uuid") String uuid) {
+        if (!userService.isAllowedUser(uuid)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         return imageService.findByUuid(uuid);
     }
 
@@ -98,12 +114,7 @@ public class ImageController {
     public Page<ImagePreviewDto> getPagedImagesByNameAndDescription(@RequestParam("page") int page, @RequestParam("size") int size,
                                                                     @RequestParam("name") String name) {
         Page<ImagePreviewDto> resultPage;
-        try {
-            resultPage = imageService.findPaginatedByNameOrDescription(page, size, name);
-        } catch (IllegalArgumentException e) {
-            log.error("Wrong parameters getPagedImagesByNameAndDescription");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
-        }
+        resultPage = imageService.findPaginatedByNameOrDescription(page, size, name);
         if (page > resultPage.getTotalPages()) {
             log.error("Try to get more pages, than there is getPagedImagesByNameAndDescription");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bandoma gauti daugiau psl nei yra");
@@ -117,12 +128,7 @@ public class ImageController {
     public Page<ImagePreviewDto> getPagedImagesByTag(@RequestParam("page") int page, @RequestParam("size") int size,
                                                      @RequestParam("tag") String name) {
         Page<ImagePreviewDto> resultPage;
-        try {
-            resultPage = imageService.findImageByTagUsingSpecification(page, size, name);
-        } catch (IllegalArgumentException e) {
-            log.error("Wrong parameters getPagedImagesByTag");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
-        }
+        resultPage = imageService.findImageByTagUsingSpecification(page, size, name);
         if (page > resultPage.getTotalPages()) {
             log.error("Try to get more pages, than there is getPagedImagesByTag");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bandoma gauti daugiau psl nei yra");
@@ -132,7 +138,10 @@ public class ImageController {
 
     @DeleteMapping("{id}")
     @Secured({"ROLE_user", "ROLE_admin"})
-    private void deleteImage(@PathVariable int id) {
+    public void deleteImage(@PathVariable int id) {
+        if (!userService.isAllowedUser(id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         try {
             imageService.deleteImage(id);
         } catch (ImageNotDeletedRuntimeException e) {
@@ -141,18 +150,16 @@ public class ImageController {
 
     }
 
-    //could throw MaxUploadSizeExceededException
     @PostMapping(consumes = "multipart/form-data")
     @Secured({"ROLE_user", "ROLE_admin"})
-    private int postImage(@ModelAttribute IngoingImageDto file) throws IOException {
+    public int postImage(@ModelAttribute IngoingImageDto file) throws IOException {
         MultipartFile image = file.getImage();
         UUID uuid = UUID.randomUUID();
         saveImage(image, uuid.toString());
 
         ImageFullDto imageDetailsToDb = new ImageFullDto(file.getName(), file.getDate(),
                 file.getDescription(), uuid.toString(), file.getTags());
-        imageService.saveImage(imageDetailsToDb);
-        return 1;
+        return imageService.saveImage(imageDetailsToDb);
     }
 
     private void saveImage(MultipartFile image, String uuid) throws IOException {

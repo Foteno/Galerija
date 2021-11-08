@@ -1,9 +1,8 @@
-package lt.insoft.gallery.gallery.Security;
+package lt.insoft.gallery.Security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.apachecommons.CommonsLog;
-import lt.insoft.gallery.gallery.domain.user.UserDetailsServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+import lt.insoft.gallery.domain.user.UserDetailsServiceImpl;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,7 +44,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                System.out.println("a");
             }
         } catch (Exception e) {
             log.error("Cannot set user authentication: {}", e);
@@ -56,15 +54,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
-        String queryString = request.getQueryString();
+        String queryString = request.getParameter("token");
 
 
         if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
             return headerAuth.substring(7);
-        } else if (queryString != null && queryString.startsWith("token=")) {
-            return queryString.substring(6);
-        }
-
-        return null;
+        } else return queryString;
     }
 }

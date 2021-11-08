@@ -52,7 +52,8 @@ public class Image {
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags;
 
-    public Image(String name, String date, String description, String uuid, Set<Tag> tags) {
+    public Image(User user, String name, String date, String description, String uuid, Set<Tag> tags) {
+        this.user = user;
         this.name = name;
         this.date = date;
         this.description = description;

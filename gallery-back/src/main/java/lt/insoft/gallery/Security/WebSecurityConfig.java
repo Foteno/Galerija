@@ -1,8 +1,8 @@
-package lt.insoft.gallery.gallery.Security;
+package lt.insoft.gallery.Security;
 
 
 import lombok.RequiredArgsConstructor;
-import lt.insoft.gallery.gallery.domain.user.UserDetailsServiceImpl;
+import lt.insoft.gallery.domain.user.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

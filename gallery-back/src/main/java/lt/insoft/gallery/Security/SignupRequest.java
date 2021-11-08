@@ -1,4 +1,4 @@
-package lt.insoft.gallery.gallery.Security;
+package lt.insoft.gallery.Security;
 
 import lombok.Getter;
 import lombok.Setter;
