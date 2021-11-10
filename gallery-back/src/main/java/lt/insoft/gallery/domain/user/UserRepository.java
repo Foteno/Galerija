@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-    User findById(int id);
+    User findById(int id); // FIXME: never used. visada žiūrėk, ką sako IDE su savo papilkinimais/pabraukimais/paryškinimais
     Boolean existsByUsername(String username);
     User findByUsername(String username);
 }

@@ -65,7 +65,7 @@ public class ImageController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         try (FileInputStream imageResponseFileInputStream = new FileInputStream(IMAGE_PATH + uuid)) {
-            bytes = imageResponseFileInputStream.readAllBytes();
+            bytes = imageResponseFileInputStream.readAllBytes(); // FIXME: tokioje vietoje, jei čia tiesiog returnintum, nereiktų iš viso turėti "bytes" kintamojo su deklaracijom ir atskiru returninimu
         } catch (FileNotFoundException e) {
             log.error("File wasn't found getImageByteArray");
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -75,13 +75,14 @@ public class ImageController {
 
     @PutMapping(consumes = "multipart/form-data", value = "/details/{file-uuid}")
     @Secured({"ROLE_user", "ROLE_admin"})
+    // fixme: pasižiūrėk https://docs.spring.io/spring-security/site/docs/current/reference/html5/#mvc-authentication-principal, taip galima gauti userį paprasčiau
     public int putImageFullDetails(@ModelAttribute IngoingImageDto file, @PathVariable("file-uuid") String uuid) throws IOException {
         if (!userService.isAllowedUser(uuid)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
         MultipartFile imageFile = file.getImage();
-        ImageFullDto imageFullDto = imageService.findByUuid(uuid);
+        ImageFullDto imageFullDto = imageService.findByUuid(uuid); // FIXME: visą mappinimo/updatinimo logiką galima būtų kelti į ImageService, nes dabar ImageDto faktiškai nereikalingas (nėra pvz returninamas)
         if (imageFullDto == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -154,7 +155,7 @@ public class ImageController {
     @Secured({"ROLE_user", "ROLE_admin"})
     public int postImage(@ModelAttribute IngoingImageDto file) throws IOException {
         MultipartFile image = file.getImage();
-        UUID uuid = UUID.randomUUID();
+        UUID uuid = UUID.randomUUID(); // FIXME: gali iš karto kviesti .toString ir turėti String variable, nes vėliau tik .toString ir naudoji
         saveImage(image, uuid.toString());
 
         ImageFullDto imageDetailsToDb = new ImageFullDto(file.getName(), file.getDate(),
@@ -188,7 +189,7 @@ public class ImageController {
         }
         File newImageThumbnailFile = new File(IMAGE_PATH + uuid + THUMBNAIL_SUFFIX);
         assert newImageThumbnailBuffered != null;
-        ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile);
+        ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile); // FIXME: resize'inimas (ir abiejų dydžių saugojimas) geriau tiktų ImageService klasėje
     }
 
     @GetMapping("/test1")

@@ -51,7 +51,7 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         for (String s: roles) {
-            System.out.println(s);
+            System.out.println(s); // FIXME. Kažkur ~10 eilučių aukščiau naudoji log.info, o čia System.out. Neišlaikai consistency netgi vieno metoto viduje
         }
         return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), roles));
     }
@@ -66,6 +66,8 @@ public class AuthController {
 
         Set<String> role = signupRequest.getRole();
         if (role != null) {
+            // FIXME: gauni set'ą, bet su juo elgiesi kaip su tiesiog String'u. Ar tikrai reikalingas set'as.
+            //  Ir ar teko matyti saitą, kur registruojantis pasirenki, ar būsi adminas? :)
             user.setRole(role.iterator().next());
         } else {
             user.setRole("user");

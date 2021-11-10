@@ -20,13 +20,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
 
-    private Specification<User> findOneUser() {
+    private Specification<User> findOneUser() { // FIXME: nereikalingas
         return  null;
     }
 
     @Transactional
     public boolean isAllowedUser(String uuid) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication(); // FIXME: IDE man čia rodo, kad dublikuotas kodas. reiktų kažką išsikelti
         UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
 
         List<String> roles = userDetails.getAuthorities().stream()
@@ -38,7 +38,7 @@ public class UserService {
         User user = userRepository.findByUsername(userDetails.getUsername());
         String realUuid = uuid;
         if (realUuid.endsWith("small")) {
-            realUuid = realUuid.substring(0, realUuid.length()-5);
+            realUuid = realUuid.substring(0, realUuid.length()-5); // FIXME: šita logika yra labai specifiškai susijusi su image, ne su user. Tai ir turėtų būti imageService
         }
         Image image = imageRepository.findByUuid(realUuid);
         if (image != null) {
@@ -47,7 +47,8 @@ public class UserService {
         return false;
     }
     @Transactional
-    public boolean isAllowedUser(int id) {
+    public boolean isAllowedUser(int id) { // FIXME: koks čia id? kodo viduje tas matosi, bet metodo signature jau turėtų tą pasakyti.
+                                           //  paprastai, jei pvz. userService turi metodą findById(int id), tas id reiškia user'io id. kitu atveju reiktų atitinkamai užvadinti
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
 
@@ -55,10 +56,10 @@ public class UserService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        if (roles.contains("ROLE_admin")) return true;
+        if (roles.contains("ROLE_admin")) return true; // FIXME: {}
 
         User user = userRepository.findByUsername(userDetails.getUsername());
-        Image image = imageRepository.findById(id);
+        Image image = imageRepository.findById(id); // FIXME: Kiek kartų image selectinamas iš DB trynimo metu?
         if (image != null) {
             return image.getUser().getUsername().equals(user.getUsername());
         }

@@ -42,9 +42,11 @@ public class JwtUtils {
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
-            return true;
+            return true; // FIXME: ar šitoje vietoje atsižvelgiama į tokeno galiojimo pabaigą?
         } catch (SignatureException e) {
             log.error("Invalid JWT signature: {}" + e.getMessage());
+            // FIXE: galima keisti į žemiau pridėtą eilutę, tada bus automatiškai išlogginama visa klaidos info. Dabar pameti klaidos stack trace. kitur tas pats
+            // log.error("Invalid JWT signature: {}", e);
         } catch (MalformedJwtException e) {
             log.error("Invalid JWT token: {}" + e.getMessage());
         } catch (ExpiredJwtException e) {

@@ -15,7 +15,7 @@ import java.util.List;
 
 
 @Setter
-@Getter
+@Getter // FIXME: klasės fieldai jau turi getterius. Arba nereikalinga šita anotacija, arba tie getteriai
 public class UserDetailsImpl implements UserDetails {
     @Serial
     private static final long serialVersionUID = 1L;

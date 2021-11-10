@@ -39,13 +39,14 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails,null, userDetails.getAuthorities());
-                System.out.println(userDetails.getAuthorities().stream()
+                System.out.println(userDetails.getAuthorities().stream() // FIXME: naudok normalų logginimą, ne System.out
                         .map(GrantedAuthority::getAuthority).collect(Collectors.joining()));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-        } catch (Exception e) {
+        } catch (Exception e) { // FIXME: reiktų stengtis necatch'inti tokių plačių exceptionų, o nurodyti vieną ar kelis Exception'us, kurie tikrai reiškia, kad kažkas konkretaus nepavyko
+                                //  taip pat, dabar klaida "suvalgoma" ir kodas vykdomas toliau
             log.error("Cannot set user authentication: {}", e);
         }
 
@@ -59,6 +60,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
             return headerAuth.substring(7);
-        } else return queryString;
+        } else return queryString; // FIXME: net jei naudojamas vienas statement'as, vis tiek stengiamės naudoti {}
     }
 }

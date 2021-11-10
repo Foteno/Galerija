@@ -12,5 +12,5 @@ public class SignupRequest {
 
     private String password;
 
-    private Set<String> role;
+    private Set<String> role; // FIXME: blogas pavadinimas, turėtų būti "roleSet" arba geriau "roles"
 }

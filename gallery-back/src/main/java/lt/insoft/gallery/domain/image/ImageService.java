@@ -58,7 +58,7 @@ public class ImageService implements IImageService {
     private EntityManager entityManager;
 
     private Specification<Image> tagsLike(String name, String username) {
-        if (username.equals("admin")) {
+        if (username.equals("admin")) { // FIXME: o ar buvimas adminu neturėtų būti nustatomas pagal rolę?
             return (root, query, criteriaBuilder) -> {
                 query.distinct(true);
                 return criteriaBuilder.like(criteriaBuilder.upper(root.join(Image_.TAGS).get(Tag_.NAME)),
@@ -68,7 +68,7 @@ public class ImageService implements IImageService {
             return (root, query, criteriaBuilder) -> {
                 query.distinct(true);
                 return criteriaBuilder.and(criteriaBuilder.like(criteriaBuilder.upper(root.join(Image_.TAGS).get(Tag_.NAME)),
-                                "%" + name.toUpperCase(Locale.ROOT) + "%"),
+                                "%" + name.toUpperCase(Locale.ROOT) + "%"), // FIXME: dublikuotas kodas, žr 64-65 eil
                         criteriaBuilder.equal(root.get(Image_.USER).get(User_.USERNAME), username));
             };
 
@@ -88,7 +88,8 @@ public class ImageService implements IImageService {
         Predicate orNameDescription = builder.or(descriptionPredicate, namePredicate);
         if (username != null) {
             Predicate byUserPredicate = builder.equal(root.get(Image_.USER).get(User_.USERNAME), username);
-            orNameDescription = builder.and(builder.or(descriptionPredicate, namePredicate), byUserPredicate);
+            orNameDescription = builder.and(builder.or(descriptionPredicate, namePredicate), byUserPredicate); // FIXME: "builder.or(descriptionPredicate, namePredicate)" jau turi kintamajame "orNameDescription"
+            // FIMXE: orNameDescription - čia jau nebelabai tinkamas pavadinimas
         }
 
         criteriaQuery.multiselect(root);
@@ -104,6 +105,7 @@ public class ImageService implements IImageService {
             images.add(tuple.get(root));
         }
 
+        // FIXME: count'inimas yra jau atskiras dalykas. Gal būtų logiška į atsirus metodus išskirti predikato buildinimą, countinimą ir rezultatų selectinimą?
         Long totalCount;
         CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
         Root<Image> root1 = countQuery.from(Image.class);
@@ -116,6 +118,7 @@ public class ImageService implements IImageService {
                 PageRequest.of(page, size), totalCount);
     }
 
+    // FIXME: @Transactional. Kaip bendra taisyklė, jei metodas public, ir jo viduje kažką darai su Entity obejektais, jis turėtų būti transactional
     @Override
     public Page<ImagePreviewDto> findImageByTagUsingSpecification(int page, int size, String tag) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -124,8 +127,8 @@ public class ImageService implements IImageService {
         try {
             image = imageRepository.findAll(tagsLike(tag, userDetails.getUsername()), PageRequest.of(page, size));
         } catch (IllegalArgumentException e) {
-            log.error("Wrong parameters " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
+            log.error("Wrong parameters " + e.getMessage()); // FIXME: logginimas
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai"); // FIXME: reiktų throwinant exceptioną visada įtraukti jos cause
         }
         return image.map(this::convertToImageDto);
     }
