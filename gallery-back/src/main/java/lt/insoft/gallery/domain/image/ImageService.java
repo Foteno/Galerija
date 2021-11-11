@@ -16,6 +16,8 @@ import lt.insoft.gallery.domain.exceptions.ImageNotDeletedRuntimeException;
 import lt.insoft.gallery.domain.tag.TagRepository;
 import lt.insoft.gallery.domain.user.UserDetailsImpl;
 import lt.insoft.gallery.domain.user.UserRepository;
+import lt.insoft.gallery.domain.user.UserService;
+import org.imgscalr.Scalr;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -25,10 +27,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Tuple;
@@ -37,7 +42,13 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +61,10 @@ import java.util.stream.Collectors;
 @CommonsLog
 public class ImageService implements IImageService {
     private static final String IMAGE_PATH = Constants.IMAGE_STORAGE_PATH;
+    private static final String THUMBNAIL_SUFFIX = "small";
+    private static final int HEIGHT = Constants.THUMBNAIL_HEIGHT;
+    private static final int WIDTH = Constants.THUMBNAIL_WIDTH;
+
     private final ImageRepository imageRepository;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
@@ -57,23 +72,22 @@ public class ImageService implements IImageService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private Specification<Image> tagsLike(String name, String username) {
-        if (username.equals("admin")) {
-            return (root, query, criteriaBuilder) -> {
+    private Specification<Image> tagsLike(String name, UserDetails userDetails) {
+        return (root, query, criteriaBuilder) -> {
+            Predicate predicate = criteriaBuilder.like(criteriaBuilder.upper(root.join(Image_.TAGS).get(Tag_.NAME)),
+                    "%" + name.toUpperCase(Locale.ROOT) + "%");
+            if (userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList()).contains("ROLE_admin")) {
                 query.distinct(true);
-                return criteriaBuilder.like(criteriaBuilder.upper(root.join(Image_.TAGS).get(Tag_.NAME)),
-                        "%" + name.toUpperCase(Locale.ROOT) + "%");
-            };
-        } else {
-            return (root, query, criteriaBuilder) -> {
+                return predicate;
+            } else {
                 query.distinct(true);
-                return criteriaBuilder.and(criteriaBuilder.like(criteriaBuilder.upper(root.join(Image_.TAGS).get(Tag_.NAME)),
-                                "%" + name.toUpperCase(Locale.ROOT) + "%"),
-                        criteriaBuilder.equal(root.get(Image_.USER).get(User_.USERNAME), username));
-            };
-
-        }
-
+                return criteriaBuilder.and(predicate,
+                        criteriaBuilder.equal(root.get(Image_.USER).get(User_.USERNAME),
+                                userDetails.getUsername()));
+            }
+        };
     }
 
     private Page<ImagePreviewDto> getImageByNameOrDescriptionCriteria(int page, int size, String name, String username) {
@@ -85,14 +99,14 @@ public class ImageService implements IImageService {
                 "%" + name.toUpperCase(Locale.ROOT) + "%");
         Predicate namePredicate = builder.like(builder.upper(root.get(Image_.NAME)),
                 "%" + name.toUpperCase(Locale.ROOT) + "%");
-        Predicate orNameDescription = builder.or(descriptionPredicate, namePredicate);
+        Predicate byRolePredicate = builder.or(descriptionPredicate, namePredicate);
         if (username != null) {
             Predicate byUserPredicate = builder.equal(root.get(Image_.USER).get(User_.USERNAME), username);
-            orNameDescription = builder.and(builder.or(descriptionPredicate, namePredicate), byUserPredicate);
+            byRolePredicate = builder.and(byRolePredicate, byUserPredicate);
         }
 
         criteriaQuery.multiselect(root);
-        criteriaQuery.where(orNameDescription);
+        criteriaQuery.where(byRolePredicate);
 
         TypedQuery<Tuple> typedQuery = entityManager.createQuery(criteriaQuery);
         typedQuery.setFirstResult(page * size);
@@ -104,37 +118,46 @@ public class ImageService implements IImageService {
             images.add(tuple.get(root));
         }
 
+        Long totalCount = getTotalCount(builder, byRolePredicate);
+
+        return new PageImpl<>(images.stream().map(this::convertToImageDto).collect(Collectors.toList()),
+                PageRequest.of(page, size), totalCount);
+    }
+
+    private Long getTotalCount(CriteriaBuilder builder, Predicate orNameDescription) {
         Long totalCount;
         CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
         Root<Image> root1 = countQuery.from(Image.class);
         countQuery.select(builder.count(root1));
         countQuery.where(orNameDescription);
         totalCount = entityManager.createQuery(countQuery).getSingleResult();
-
-
-        return new PageImpl<>(images.stream().map(this::convertToImageDto).toList(),
-                PageRequest.of(page, size), totalCount);
+        return totalCount;
     }
 
-    @Override
-    public Page<ImagePreviewDto> findImageByTagUsingSpecification(int page, int size, String tag) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+    @Transactional
+    public Image getImageByThumbnailUuid(String uuid) {
+        if (uuid.endsWith("small")) {
+            uuid = uuid.substring(0, uuid.length()-5);
+        }
+        return imageRepository.findByUuid(uuid);
+    }
+
+    @Transactional
+    public Page<ImagePreviewDto> findImageByTagUsingSpecification(UserDetailsImpl userDetails, int page,
+                                                                  int size, String tag) {
         Page<Image> image;
         try {
-            image = imageRepository.findAll(tagsLike(tag, userDetails.getUsername()), PageRequest.of(page, size));
+            image = imageRepository.findAll(tagsLike(tag, userDetails), PageRequest.of(page, size));
         } catch (IllegalArgumentException e) {
-            log.error("Wrong parameters " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
+            log.error("Wrong parameters ", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai", e);
         }
         return image.map(this::convertToImageDto);
     }
 
-    @Override
-    public Page<ImagePreviewDto> findPaginatedByNameOrDescription(int page, int size, String name) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
-
+    @Transactional
+    public Page<ImagePreviewDto> findPaginatedByNameOrDescription(UserDetailsImpl userDetails, int page,
+                                                                  int size, String name) {
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
@@ -148,12 +171,11 @@ public class ImageService implements IImageService {
             images = getImageByNameOrDescriptionCriteria(page, size, name, username);
         } catch (IllegalArgumentException e) {
             log.error("Wrong parameters " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Blogi parametrai", e);
         }
         return images;
     }
 
-    @Override
     @Transactional
     public ImageFullDto findByUuid(String uuid) {
         Image image = imageRepository.findByUuid(uuid);
@@ -167,13 +189,11 @@ public class ImageService implements IImageService {
         return imageFullDto;
     }
 
-    private ImagePreviewDto convertToImageDto(Image image) {
-        return new ImagePreviewDto(image.getName(), image.getDescription(), image.getUuid());
-    }
-
-    @Override
     @Transactional
     public int updateImage(ImageFullDto imageFullDto) {
+        if (imageRepository.findByUuid(imageFullDto.getUuid()) == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
         Set<Tag> tags = getTagsFromImageFullDto(imageFullDto);
 
         Image image = imageRepository.getById(imageFullDto.getId());
@@ -182,10 +202,9 @@ public class ImageService implements IImageService {
         image.setDescription(imageFullDto.getDescription());
         image.setTags(tags);
 
-        return  imageRepository.save(image).getId();
+        return imageRepository.save(image).getId();
     }
 
-    @Override
     @Transactional
     public int saveImage(ImageFullDto imageFullDto) {
         Set<Tag> tags = getTagsFromImageFullDto(imageFullDto);
@@ -196,6 +215,35 @@ public class ImageService implements IImageService {
         Image image = new Image(user, imageFullDto.getName(), imageFullDto.getDate(), imageFullDto.getDescription(),
                 imageFullDto.getUuid(), tags);
         return imageRepository.save(image).getId();
+    }
+
+    public void saveImageLocally(MultipartFile image, String uuid) throws IOException {
+        BufferedImage newImageThumbnailBuffered = null;
+
+        File newImageFile = new File(IMAGE_PATH + uuid);
+        InputStream inputStream = image.getInputStream();
+        byte[] buffer = new byte[inputStream.available()];
+        if (inputStream.read(buffer) == -1) {
+            log.error("No bytes read");
+        }
+        inputStream.close();
+        if (buffer.length == 0) {
+            return;
+        }
+
+        try (OutputStream outputStream = new FileOutputStream(newImageFile)) {
+            outputStream.write(buffer);
+
+            ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
+            BufferedImage newImageBuffered = ImageIO.read(bais);
+            newImageThumbnailBuffered = Scalr.resize(newImageBuffered, WIDTH, HEIGHT);
+        } catch (IOException e) {
+            log.error("Couldn't open OutputStream or write to BufferedImage");
+            e.printStackTrace();
+        }
+        File newImageThumbnailFile = new File(IMAGE_PATH + uuid + THUMBNAIL_SUFFIX);
+        assert newImageThumbnailBuffered != null;
+        ImageIO.write(newImageThumbnailBuffered, "png", newImageThumbnailFile);
     }
 
     private Set<Tag> getTagsFromImageFullDto(ImageFullDto imageFullDto) {
@@ -220,12 +268,31 @@ public class ImageService implements IImageService {
         return tagsFromDb;
     }
 
+    private Set<TagDto> getTagDtos(Image image) {
+        Set<TagDto> tagDtos = new HashSet<>();
+        for (Tag tag : image.getTags()) {
+            tagDtos.add(new TagDto(tag.getName()));
+        }
+        return tagDtos;
+    }
 
-    @Override
+    private ImagePreviewDto convertToImageDto(Image image) {
+        return new ImagePreviewDto(image.getName(), image.getDescription(), image.getUuid());
+    }
+
     @Transactional
-    public void deleteImage(int id) {
+    public void deleteImage(UserDetailsImpl userDetails, int id) {
+        User user = userRepository.findByUsername(userDetails.getUsername());
+
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
         try {
             Image imageToDelete = imageRepository.findById(id);
+            if (!roles.contains("ROLE_admin") && !user.getUsername().equals(imageToDelete.getUser().getUsername())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
             imageRepository.deleteById(id);
             File imageFile = new File(IMAGE_PATH + imageToDelete.getUuid());
             File imageThumbnailFile = new File(IMAGE_PATH + imageToDelete.getUuid() + "small");
@@ -237,7 +304,7 @@ public class ImageService implements IImageService {
             }
         } catch (EmptyResultDataAccessException e) {
             log.error("There's no such entry in database");
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nera duombazej");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nera duombazej", e);
         }
     }
 
@@ -249,12 +316,6 @@ public class ImageService implements IImageService {
         }
     }
 
-    private Set<TagDto> getTagDtos(Image image) {
-        Set<TagDto> tagDtos = new HashSet<>();
-        for (Tag tag : image.getTags()) {
-            tagDtos.add(new TagDto(tag.getName()));
-        }
-        return tagDtos;
-    }
+
 
 }

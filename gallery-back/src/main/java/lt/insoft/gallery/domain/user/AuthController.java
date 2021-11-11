@@ -51,7 +51,7 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         for (String s: roles) {
-            System.out.println(s);
+            log.info(s);
         }
         return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), roles));
     }
@@ -64,12 +64,7 @@ public class AuthController {
         User user = new User(signupRequest.getUsername(), String.valueOf(LocalTime.now()),
                 encoder.encode(signupRequest.getPassword()));
 
-        Set<String> role = signupRequest.getRole();
-        if (role != null) {
-            user.setRole(role.iterator().next());
-        } else {
-            user.setRole("user");
-        }
+        user.setRole("user");
 
         userRepository.save(user);
         return ResponseEntity.ok("Registration success");
