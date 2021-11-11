@@ -191,12 +191,12 @@ public class ImageService implements IImageService {
 
     @Transactional
     public int updateImage(ImageFullDto imageFullDto) {
-        if (imageRepository.findByUuid(imageFullDto.getUuid()) == null) {
+        Image image = imageRepository.findByUuid(imageFullDto.getUuid());
+        if (image == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         Set<Tag> tags = getTagsFromImageFullDto(imageFullDto);
 
-        Image image = imageRepository.getById(imageFullDto.getId());
         image.setName(imageFullDto.getName());
         image.setDate(imageFullDto.getDate());
         image.setDescription(imageFullDto.getDescription());
